@@ -1,4 +1,18 @@
 
+const SCREEN_WIDTH = window.innerWidth;
+const SCREEN_HEIGHT = window.innerHeight;
+const HEIGHT = 20;
+const WIDTH = 30;
+const PADDING = 10;
+const BLOC_SIZE = 30;
+const TIC = 200;
+
+var POSITIONS = [{x:10,y:10},{x:10,y:11},{x:10,y:12}];
+var LAST_DIRECTION = "TOP";
+var DIRECTION = "TOP"; // TOP, BOTTOM, RIGHT, LEFT
+var TIMER = null;
+var APPLE = null;
+var SCORE = 0;
 
 const canvas = document.getElementById("canvas");
 const context = canvas.getContext("2d");
@@ -6,19 +20,9 @@ const context = canvas.getContext("2d");
 canvas.width = window.innerWidth;
 canvas.height = window.innerHeight;
 
-const HEIGHT = 20;
-const WIDTH = 30;
-const PADDING = 10;
-const BLOC_SIZE = 30;
-const TIC = 500;
-
-var POSITIONS = [{x:10,y:10},{x:10,y:11},{x:10,y:12}];
-var DIRECTION = "TOP"; // TOP, BOTTOM, RIGHT, LEFT
-var TIMER = null;
-
 function init(){
     drawBoard();
-    pauseOrStart();
+    initSnake();    
 }
 init();
 
@@ -38,28 +42,80 @@ function drawBoard(){
 }
 
 function onEachTic(){
-    clearSnake();
-    computePositions();
-    drawSnake();
+    changeDirection(LAST_DIRECTION);
+    generateApple();
+    moveSnake();
+}
+
+function initSnake(){
+    for(let index in POSITIONS){
+        drawPos(POSITIONS[index]);
+    }
+}
+
+function moveSnake(){
+    // Je vérifie si il a mangé une pomme
+    if(isAppleEaten()){
+       eatApple();
+    }
+
+    // Je dessine le snake
+   drawSnake();
+
+    // Je vérifie s'il n'a pas mordu sa queue
+    if(isSnakeEatItSelf()){
+        gameOver();
+    }
 }
 
 function drawSnake(){
-    context.fillStyle="#FF0000";
-    var pos;
-    var index;
-    for(index in POSITIONS){
-        pos = POSITIONS[index];
-        context.fillRect(pos.x * BLOC_SIZE + 4, pos.y * BLOC_SIZE + 4, BLOC_SIZE - 8, BLOC_SIZE - 8);
-    }
+    // Je supprime le dernier
+    clearPos(POSITIONS[POSITIONS.length - 1]);
+    // Je calcule mes nouvelles positions
+    computePositions();
+    // J'affiche la première position
+    drawPos(POSITIONS[0]);
 }
 
-function clearSnake(){
-    var pos;
-    var index;
-    for(index in POSITIONS){
-        pos = POSITIONS[index];
-        context.clearRect(pos.x * BLOC_SIZE + 4, pos.y * BLOC_SIZE + 4, BLOC_SIZE - 8, BLOC_SIZE - 8);
+function isSnakeEatItSelf(){
+    for(let i = 1; i < POSITIONS.length; i++){
+        if(POSITIONS[i].x == POSITIONS[0].x && POSITIONS[i].y == POSITIONS[0].y){
+            return true
+        }
     }
+    return false;
+}
+
+function gameOver(){
+    pauseOrStart();
+    console.log("GAME OVER");
+}
+
+function isAppleEaten(){
+    return POSITIONS[0].x == APPLE.x && POSITIONS[0].y == APPLE.y
+}
+
+function eatApple(){
+    APPLE = null;
+    SCORE+=1;
+    drawScore();
+    POSITIONS.push(POSITIONS[POSITIONS.length - 1]);
+}
+
+function drawScore(){
+    context.font="20px Georgia";
+    context.fillStyle = '#FFFFFF';
+    context.fillRect(10, SCREEN_HEIGHT - 50, 50, 30);
+    context.fillStyle = '#000000';
+    context.fillText(SCORE, 10, SCREEN_HEIGHT - 30);
+}
+
+function drawPos(pos){
+    context.fillRect(pos.x * BLOC_SIZE + 4, pos.y * BLOC_SIZE + 4, BLOC_SIZE - 8, BLOC_SIZE - 8);
+}
+
+function clearPos(pos){
+    context.clearRect(pos.x * BLOC_SIZE + 4, pos.y * BLOC_SIZE + 4, BLOC_SIZE - 8, BLOC_SIZE - 8);
 }
 
 function computePositions(){
@@ -74,18 +130,18 @@ function computePositions(){
     switch(DIRECTION) {
         case "TOP":
             x = pos.x;
-            y = pos.y - 1; 
+            y = pos.y <= 0 ? HEIGHT - 1 : pos.y - 1;  
             break;
         case "BOTTOM":
             x = pos.x;
-            y = pos.y + 1; 
+            y = pos.y >= HEIGHT - 1 ? 0 : pos.y + 1; 
             break;
         case "RIGHT":
-            x = pos.x + 1;
+            x = pos.x >= WIDTH - 1 ? 0 : pos.x + 1;
             y = pos.y; 
             break;
         case "LEFT":
-            x = pos.x - 1;
+            x = pos.x <= 0 ? WIDTH - 1 : pos.x - 1;
             y = pos.y; 
             break;
     }
@@ -100,16 +156,16 @@ function checkKey(e) {
     e = e || window.event;
 
     if (e.keyCode == '38') {
-        changeDirection("TOP");
+        LAST_DIRECTION = "TOP";
     }
     else if (e.keyCode == '40') {
-        changeDirection("BOTTOM");
+        LAST_DIRECTION = "BOTTOM";
     }
     else if (e.keyCode == '37') {
-        changeDirection("LEFT");
+        LAST_DIRECTION = "LEFT";
     }
     else if (e.keyCode == '39') {
-        changeDirection("RIGHT");
+        LAST_DIRECTION = "RIGHT";
     }
     else if(e.keyCode == '32'){
         pauseOrStart();
@@ -140,6 +196,24 @@ function pauseOrStart(){
         clearInterval(TIMER);
         TIMER = null;
     }
+}
+
+function generateApple(){
+    if(APPLE == null){
+        let x = random(0, WIDTH - 1);
+        let y = random(0, HEIGHT - 1);
+        APPLE = {x:x, y:y};
+        drawApple(x,y);
+    }
+}
+
+function drawApple(x, y){
+    context.fillRect(x * BLOC_SIZE + 8, y * BLOC_SIZE + 8, BLOC_SIZE - 16, BLOC_SIZE - 16);
+}
+
+function random(min, max)
+{
+ return Math.floor(Math.random() * (max - min + 1)) + min;
 }
 
 
