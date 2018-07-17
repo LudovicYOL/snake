@@ -1,15 +1,15 @@
 
 const SCREEN_WIDTH = window.innerWidth;
 const SCREEN_HEIGHT = window.innerHeight;
-const HEIGHT = 20;
-const WIDTH = 30;
-const PADDING = 10;
 const BLOC_SIZE = 30;
-const TIC = 200;
 
-var POSITIONS = [{x:10,y:10},{x:10,y:11},{x:10,y:12}];
-var LAST_DIRECTION = "TOP";
-var DIRECTION = "TOP"; // TOP, BOTTOM, RIGHT, LEFT
+var HEIGHT;
+var WIDTH;
+
+var GAME_SPEED = 300;
+var POSITIONS = [{x:3,y:1},{x:2,y:1},{x:1,y:1}];
+var LAST_DIRECTION = "RIGHT";
+var DIRECTION = "RIGHT"; // TOP, BOTTOM, RIGHT, LEFT
 var TIMER = null;
 var APPLE = null;
 var SCORE = 0;
@@ -21,10 +21,19 @@ canvas.width = window.innerWidth;
 canvas.height = window.innerHeight;
 
 function init(){
+    initBoard();
     drawBoard();
     initSnake();    
 }
 init();
+
+function initBoard(){
+    context.font="22px Agency FB";
+    drawAction("- PRESS SPACE TO PLAY -");
+    drawScore();
+    WIDTH = Math.floor(SCREEN_WIDTH / BLOC_SIZE);
+    HEIGHT = Math.floor(SCREEN_HEIGHT / BLOC_SIZE) - 2;
+}
 
 function drawBoard(){
     for (var x = 0; x <= WIDTH * BLOC_SIZE; x += BLOC_SIZE) {
@@ -88,7 +97,7 @@ function isSnakeEatItSelf(){
 
 function gameOver(){
     pauseOrStart();
-    console.log("GAME OVER");
+    console.log("- GAME OVER -");
 }
 
 function isAppleEaten(){
@@ -100,14 +109,25 @@ function eatApple(){
     SCORE+=1;
     drawScore();
     POSITIONS.push(POSITIONS[POSITIONS.length - 1]);
+    GAME_SPEED = GAME_SPEED - GAME_SPEED * 0.05;
+    clearInterval(TIMER);
+    TIMER = setInterval(function(){ onEachTic() }, GAME_SPEED);
 }
 
 function drawScore(){
-    context.font="20px Georgia";
     context.fillStyle = '#FFFFFF';
-    context.fillRect(10, SCREEN_HEIGHT - 50, 50, 30);
+    context.fillRect(10, SCREEN_HEIGHT - 50, 120, 30);
     context.fillStyle = '#000000';
-    context.fillText(SCORE, 10, SCREEN_HEIGHT - 30);
+    context.textAlign="left";
+    context.fillText("SCORE : "+ SCORE, 10, SCREEN_HEIGHT - 30);
+}
+
+function drawAction(action){
+    context.fillStyle = '#FFFFFF';
+    context.fillRect(SCREEN_WIDTH/2 - 100, SCREEN_HEIGHT - 50, 200, 30);
+    context.fillStyle = '#000000';
+    context.textAlign="center";
+    context.fillText(action, SCREEN_WIDTH/2, SCREEN_HEIGHT - 30);
 }
 
 function drawPos(pos){
@@ -191,10 +211,12 @@ function changeDirection(direction){
 
 function pauseOrStart(){
     if(TIMER == null){
-        TIMER = setInterval(function(){ onEachTic() }, TIC);
+        TIMER = setInterval(function(){ onEachTic() }, GAME_SPEED);
+        drawAction("- PRESS SPACE TO PAUSE -");
     }else{
         clearInterval(TIMER);
         TIMER = null;
+        drawAction("- PRESS SPACE TO START -");
     }
 }
 
@@ -213,7 +235,7 @@ function drawApple(x, y){
 
 function random(min, max)
 {
- return Math.floor(Math.random() * (max - min + 1)) + min;
+    return Math.floor(Math.random() * (max - min + 1)) + min;
 }
 
 
