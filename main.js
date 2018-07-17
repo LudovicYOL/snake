@@ -1,4 +1,3 @@
-
 const SCREEN_WIDTH = window.innerWidth;
 const SCREEN_HEIGHT = window.innerHeight;
 const BLOC_SIZE = 30;
@@ -6,13 +5,14 @@ const BLOC_SIZE = 30;
 var HEIGHT;
 var WIDTH;
 
-var GAME_SPEED = 300;
-var POSITIONS = [{x:3,y:1},{x:2,y:1},{x:1,y:1}];
+var GAME_SPEED = 400;
+var POSITIONS;
 var LAST_DIRECTION = "RIGHT";
 var DIRECTION = "RIGHT"; // TOP, BOTTOM, RIGHT, LEFT
 var TIMER = null;
 var APPLE = null;
 var SCORE = 0;
+var GAME_STATE = "INIT"; // INIT, START, PAUSE, CONTINUE, GAME_OVER
 
 const canvas = document.getElementById("canvas");
 const context = canvas.getContext("2d");
@@ -20,19 +20,31 @@ const context = canvas.getContext("2d");
 canvas.width = window.innerWidth;
 canvas.height = window.innerHeight;
 
+function reset(){
+    context.clearRect(0,0,SCREEN_WIDTH, SCREEN_HEIGHT);
+    POSITIONS = [{x:3,y:1},{x:2,y:1},{x:1,y:1}];
+    LAST_DIRECTION = "RIGHT";
+    DIRECTION = "RIGHT";
+    APPLE = null;
+    SCORE = 0;
+    GAME_SPEED = 400;
+}
+
 function init(){
+    reset();
     initBoard();
-    drawBoard();
     initSnake();    
 }
 init();
 
 function initBoard(){
+    WIDTH = Math.floor(SCREEN_WIDTH / BLOC_SIZE);
+    HEIGHT = Math.floor(SCREEN_HEIGHT / BLOC_SIZE) - 2;
+
     context.font="22px Agency FB";
     drawAction("- PRESS SPACE TO PLAY -");
     drawScore();
-    WIDTH = Math.floor(SCREEN_WIDTH / BLOC_SIZE);
-    HEIGHT = Math.floor(SCREEN_HEIGHT / BLOC_SIZE) - 2;
+    // drawBoard();
 }
 
 function drawBoard(){
@@ -96,8 +108,7 @@ function isSnakeEatItSelf(){
 }
 
 function gameOver(){
-    pauseOrStart();
-    console.log("- GAME OVER -");
+    changeGameStatus("GAME_OVER");
 }
 
 function isAppleEaten(){
@@ -109,23 +120,24 @@ function eatApple(){
     SCORE+=1;
     drawScore();
     POSITIONS.push(POSITIONS[POSITIONS.length - 1]);
-    GAME_SPEED = GAME_SPEED - GAME_SPEED * 0.05;
+    GAME_SPEED = 1 / (SCORE/300) + 50;
+
     clearInterval(TIMER);
     TIMER = setInterval(function(){ onEachTic() }, GAME_SPEED);
 }
 
 function drawScore(){
-    context.fillStyle = '#FFFFFF';
+    context.fillStyle = '#BFE0A9';
     context.fillRect(10, SCREEN_HEIGHT - 50, 120, 30);
-    context.fillStyle = '#000000';
+    context.fillStyle = '#363236';
     context.textAlign="left";
     context.fillText("SCORE : "+ SCORE, 10, SCREEN_HEIGHT - 30);
 }
 
 function drawAction(action){
-    context.fillStyle = '#FFFFFF';
+    context.fillStyle = '#BFE0A9';
     context.fillRect(SCREEN_WIDTH/2 - 100, SCREEN_HEIGHT - 50, 200, 30);
-    context.fillStyle = '#000000';
+    context.fillStyle = '#363236';
     context.textAlign="center";
     context.fillText(action, SCREEN_WIDTH/2, SCREEN_HEIGHT - 30);
 }
@@ -188,7 +200,7 @@ function checkKey(e) {
         LAST_DIRECTION = "RIGHT";
     }
     else if(e.keyCode == '32'){
-        pauseOrStart();
+        manageSpacebar();
     }
 }
 
@@ -209,28 +221,83 @@ function changeDirection(direction){
     }
 }
 
-function pauseOrStart(){
-    if(TIMER == null){
-        TIMER = setInterval(function(){ onEachTic() }, GAME_SPEED);
-        drawAction("- PRESS SPACE TO PAUSE -");
-    }else{
-        clearInterval(TIMER);
-        TIMER = null;
-        drawAction("- PRESS SPACE TO START -");
+function manageSpacebar(){
+    switch(GAME_STATE)
+    {
+        case "INIT":
+            changeGameStatus("START");
+            break;
+        case "START":
+            changeGameStatus("PAUSE"); 
+            break;
+        case "PAUSE":
+            changeGameStatus("START");
+            break;
+        case "GAME_OVER":
+            changeGameStatus("INIT");
+            break;
+        default:
+            break;
     }
+}
+
+function changeGameStatus(newStatus){
+    switch(newStatus)
+    {
+        case "INIT":
+            reset();
+            drawAction("- PRESS SPACE TO START -");
+            break;
+        case "START":
+            TIMER = setInterval(function(){ onEachTic() }, GAME_SPEED);
+            drawAction("- PRESS SPACE TO PAUSE -");   
+            break;
+        case "PAUSE":
+            clearInterval(TIMER);
+            drawAction("- PRESS SPACE TO CONTINUE -");
+            break;
+        case "GAME_OVER":
+            clearInterval(TIMER);
+            drawAction("- GAME OVER -");
+            break;
+        default:
+            break;
+    }
+    GAME_STATE = newStatus;
 }
 
 function generateApple(){
     if(APPLE == null){
-        let x = random(0, WIDTH - 1);
-        let y = random(0, HEIGHT - 1);
-        APPLE = {x:x, y:y};
-        drawApple(x,y);
+        let generated = false;
+        while(!generated)
+        {
+            let x = random(0, WIDTH - 1);
+            let y = random(0, HEIGHT - 1);
+            if(!snakeContains(x,y)){
+                APPLE = {x:x, y:y};
+                drawApple(x,y);
+                generated = true;
+            }
+        }
     }
 }
 
+function snakeContains(x,y){
+    for(let index in POSITIONS)
+    {
+        let pos = POSITIONS[index];
+        if(pos.x == x && pos.y == y){
+            return true;
+        }
+    }
+    return false;
+}
+
 function drawApple(x, y){
-    context.fillRect(x * BLOC_SIZE + 8, y * BLOC_SIZE + 8, BLOC_SIZE - 16, BLOC_SIZE - 16);
+    context.fillRect(x * BLOC_SIZE + 10, y * BLOC_SIZE + 5, BLOC_SIZE - 20, 5); // HAUT
+    context.fillRect(x * BLOC_SIZE + 10, y * BLOC_SIZE + BLOC_SIZE - 10, BLOC_SIZE - 20, 5); // BAS
+    context.fillRect(x * BLOC_SIZE + 5, y * BLOC_SIZE + 10, 5, BLOC_SIZE - 20); // GAUCHE
+    context.fillRect(x * BLOC_SIZE + BLOC_SIZE - 10, y * BLOC_SIZE + 10, 5, BLOC_SIZE - 20); // DROITE
 }
 
 function random(min, max)
