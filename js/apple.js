@@ -7,13 +7,13 @@ class Apple {
         this.coordonnees = null;
     }
 
-    generer(snake){
+    generer(){
         if(this.coordonnees == null){
             let generated = false;
             while(!generated)
             {
-                let x = random(0, WIDTH - 1);
-                let y = random(0, HEIGHT - 1);
+                let x = random(0, board.width - 1);
+                let y = random(0, board.height - 1);
                 if(!snake.contains(x,y)){
                     this.coordonnees = {x:x, y:y};
                     this.draw();

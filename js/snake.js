@@ -36,21 +36,21 @@ class Snake {
         let x;
         let y;
     
-        switch(DIRECTION) {
-            case "TOP":
+        switch(controller.direction) {
+            case DirectionEnum.TOP:
                 x = pos.x;
-                y = pos.y <= 0 ? HEIGHT - 1 : pos.y - 1;  
+                y = pos.y <= 0 ? board.height - 1 : pos.y - 1;  
                 break;
-            case "BOTTOM":
+            case DirectionEnum.BOTTOM:
                 x = pos.x;
-                y = pos.y >= HEIGHT - 1 ? 0 : pos.y + 1; 
+                y = pos.y >= board.height - 1 ? 0 : pos.y + 1; 
                 break;
-            case "RIGHT":
-                x = pos.x >= WIDTH - 1 ? 0 : pos.x + 1;
+            case DirectionEnum.RIGHT:
+                x = pos.x >= board.width - 1 ? 0 : pos.x + 1;
                 y = pos.y; 
                 break;
-            case "LEFT":
-                x = pos.x <= 0 ? WIDTH - 1 : pos.x - 1;
+            case DirectionEnum.LEFT:
+                x = pos.x <= 0 ? board.width - 1 : pos.x - 1;
                 y = pos.y; 
                 break;
         }
@@ -89,5 +89,23 @@ class Snake {
             }
         }
         return false;
+    }
+
+    move(){
+        // Je vérifie si il a mangé une pomme
+        if(this.isEatingApple(apple)){
+            apple.reset();
+            score.increment();
+            this.grow();
+            board.updateGameSpeed();
+        }
+    
+        // Je dessine le snake
+       this.draw();
+    
+        // Je vérifie s'il n'a pas mordu sa queue
+        if(this.isEatingHimself()){
+            board.gameOver();
+        }
     }
 }

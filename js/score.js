@@ -17,5 +17,6 @@ class Score {
 
     increment(){
       this.score++;
+      this.draw();
     }
   }
